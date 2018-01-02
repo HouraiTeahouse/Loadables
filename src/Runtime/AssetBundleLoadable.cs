@@ -23,8 +23,7 @@ public class AssetBundleLoadable<T> : AbstractResource<T> where T : UnityEngine.
   public override T LoadImpl() {
 #if UNITY_EDITOR
     if (!EditorApplication.isPlayingOrWillChangePlaymode) {
-      string[] path = AssetDatabase.GetAssetPathsFromAssetBundleAndAssetName(BundleName, AssetName);
-      return AssetDatabase.LoadAssetAtPath(path.FirstOrDefault(), typeof(T));
+      return AssetUtil.LoadBundledAsset<T>(BundleName, AssetName);
     } else
 #endif
     {
@@ -40,11 +39,6 @@ public class AssetBundleLoadable<T> : AbstractResource<T> where T : UnityEngine.
     Resources.UnloadAsset(Asset);
     AssetBundleManager.UnloadAssetBundle(BundleName);
   }
-
-#if UNITY_EDITOR
-  T LoadEditorAsset() {
-  }
-#endif
 
 }
 

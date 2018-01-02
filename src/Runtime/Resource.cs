@@ -30,12 +30,21 @@ public static class Resource {
   }
 
   static IResource<T> CreateResource<T>(string location) where T : Object {
-    if (location.IndexOf(BundleSeperator) >= 0) {
-      string[] parts = location.Split(BundleSeperator);
-      return new AssetBundleLoadable<T>(parts[0], parts[1]);
+    if (IsBundlePath(location)) {
+      var bundlePath = SplitBundlePath(location);
+      return new AssetBundleLoadable<T>(bundlePath.Item1, bundlePath.Item2);
     } else {
       return new ResourcesLoadable<T>(location);
     }
+  }
+
+  public static bool IsBundlePath(string path) {
+    return path != null && path.IndexOf(BundleSeperator) >= 0;
+  }
+
+  public static Tuple<string, string> SplitBundlePath(string path) {
+    string[] parts = path.Split(BundleSeperator);
+    return Tuple.Create(parts[0], parts[1]);
   }
 
 }
