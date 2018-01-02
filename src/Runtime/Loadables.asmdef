@@ -1,0 +1,9 @@
+{
+    "name": "Loadables",
+    "references": [
+        "Tasks",
+        "HouraiCore"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": []
+}

@@ -4,8 +4,10 @@ namespace HouraiTeahouse.Loadables {
 
 public interface ILoadable {
 
+  bool IsLoaded { get; }
   void Load();
   ITask LoadAsync();
+  void Unload();
 
 }
 
