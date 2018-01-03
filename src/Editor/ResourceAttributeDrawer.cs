@@ -20,9 +20,9 @@ internal class ResourceAttributeDrawer : PropertyDrawer {
 
     public Data(SerializedProperty property, GUIContent content) {
       _path = property.stringValue;
-      if (Resource.IsBundlePath(_path)) {
-        var bundlePath = Resource.SplitBundlePath(_path);
-        _object = AssetUtil.LoadBundledAsset<Object>(bundlePath.Item1, bundlePath.Item2);
+      if (Bundles.IsBundlePath(_path)) {
+        var bundlePath = Bundles.SplitBundlePath(_path);
+        _object = EditorAssetUtil.LoadBundledAsset<Object>(bundlePath.Item1, bundlePath.Item2);
       } else {
         _object = Resources.Load<Object>(_path);
       }
@@ -52,8 +52,8 @@ internal class ResourceAttributeDrawer : PropertyDrawer {
         message = "No object specified";
       } else if (!Valid) {
         message = "Not in Resources folder or Asset Bundle. Will not be saved.";
-      } else if (_path.IndexOf(Resource.BundleSeperator) >= 0) {
-        var bundlePath = Resource.SplitBundlePath(_path);
+      } else if (Bundles.IsBundlePath(_path)) {
+        var bundlePath = Bundles.SplitBundlePath(_path);
         message = $"Asset Bundle: {bundlePath.Item1}\nPath:{bundlePath.Item2}";
       } else {
         message = $"Path: {_path}";
@@ -69,10 +69,10 @@ internal class ResourceAttributeDrawer : PropertyDrawer {
     void Update(Object obj) {
       _object = obj;
       var bundleName = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(_object)).assetBundleName;
-      if (AssetUtil.IsResource(_object)) {
-        _path = AssetUtil.GetResourcePath(_object);
+      if (EditorAssetUtil.IsResource(_object)) {
+        _path = EditorAssetUtil.GetResourcePath(_object);
       } else if (!string.IsNullOrEmpty(bundleName)) {
-        _path = bundleName + Resource.BundleSeperator + _object.name;
+        _path = Bundles.CreateBundlePath(bundleName, _object.name);
       } else {
         _path = string.Empty;
       }

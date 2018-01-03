@@ -8,22 +8,23 @@ using UnityEditor;
 
 namespace HouraiTeahouse.Loadables {
 
-public class AssetBundleLoadable<T> : AbstractResource<T> where T : UnityEngine.Object {
+public class AssetBundleAsset<T> : AbstractAsset<T> where T : UnityEngine.Object {
 
   public string BundleName { get; }
   public string AssetName { get; }
 
-  public string Path => $"{BundleName}{Resource.BundleSeperator}{AssetName}";
+  public string Path => Bundles.CreateBundlePath(BundleName, AssetName);
 
-  public AssetBundleLoadable(string bundleName, string assetName) {
-    BundleName = bundleName;
-    AssetName = assetName;
+  public AssetBundleAsset(string path) {
+    var bundlePath = Bundles.SplitBundlePath(path);
+    BundleName = bundlePath.Item1;
+    AssetName = bundlePath.Item2;
   }
 
   public override T LoadImpl() {
 #if UNITY_EDITOR
     if (!EditorApplication.isPlayingOrWillChangePlaymode) {
-      return AssetUtil.LoadBundledAsset<T>(BundleName, AssetName);
+      return EditorAssetUtil.LoadBundledAsset<T>(BundleName, AssetName);
     } else
 #endif
     {

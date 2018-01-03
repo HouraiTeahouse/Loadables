@@ -6,7 +6,7 @@ using UnityEditor;
 
 namespace HouraiTeahouse.Loadables {
 
-public static class AssetUtil {
+public static class EditorAssetUtil {
 
   const string ResourcePath = "Resources/";
   static readonly Regex ResourceRegex = new Regex(".*/Resources/(.*?)\\..*", RegexOptions.Compiled);

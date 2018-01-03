@@ -351,17 +351,6 @@ public static class AssetBundleManager {
     });
   }
 
-  // Loads an asset given a bundle encoded path
-  public static ITask<T> LoadAssetAsync<T>(string assetPath) where T : Object {
-    if (assetPath.IndexOf(Resource.BundleSeperator) < 0) {
-      return Task.FromError<T>(new ArgumentException(
-        string.Format("assetPath must contain the bundle seperator ({0}) to load from asset bundles", Resource.BundleSeperator)
-      ));
-    }
-    string[] parts = assetPath.Split(Resource.BundleSeperator);
-    return LoadAssetAsync<T>(parts[0], parts[1]);
-  }
-
   // Load asset from the given assetBundle.
   public static ITask<T> LoadAssetAsync<T>(string assetBundleName, string assetName) where T : Object {
     Debug.LogFormat("Loading {0} from {1} bundle...", assetName, assetBundleName);
@@ -386,18 +375,6 @@ public static class AssetBundleManager {
     var assetTask = task.Then(bundle => bundle.AssetBundle.LoadAssetAsync<T>(assetName).ToTask());
     assetTask.Then(() => Debug.LogFormat("Loaded {0} from {1}", assetName, assetBundleName));
     return assetTask.Then(request => request.asset as T);
-  }
-
-  // Loads a scene given a bundle encoded path
-  public static ITask LoadLevelAsync(string assetPath,
-                                     LoadSceneMode loadMode = LoadSceneMode.Single) {
-    if (assetPath.IndexOf(Resource.BundleSeperator) < 0) {
-      return Task.FromError(new ArgumentException(
-          string.Format("assetPath must contain the bundle seperator ({0}) to load from asset bundles", Resource.BundleSeperator)
-      ));
-    }
-    string[] parts = assetPath.Split(Resource.BundleSeperator);
-    return LoadLevelAsync(parts[0], parts[1], loadMode);
   }
 
   // Load level from the given assetBundle.

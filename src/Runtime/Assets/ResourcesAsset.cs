@@ -3,11 +3,11 @@ using UnityEngine;
 
 namespace HouraiTeahouse.Loadables {
 
-public class ResourcesLoadable<T> : AbstractResource<T> where T : Object {
+public class ResourcesAsset<T> : AbstractAsset<T> where T : Object {
 
   public string Path { get; }
 
-  public ResourcesLoadable(string path) {
+  public ResourcesAsset(string path) {
     Path = path;
   }
 

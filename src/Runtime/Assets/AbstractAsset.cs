@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace HouraiTeahouse.Loadables {
 
-public abstract class AbstractResource<T> : IResource<T> where T : Object {
+public abstract class AbstractAsset<T> : IAsset<T> where T : Object {
 
   public virtual T Asset { get; protected set; }
   public bool IsLoaded => Asset != null;
