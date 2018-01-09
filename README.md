@@ -3,6 +3,16 @@
 A Unity3D library for simplifying and abstracting the processes of dynamically
 loading assets from game data stores like Resources of AssetBundles.
 
+## Setup
+We generally advise using git submodules to include this into any git based project.
+If that is not possible, either clone or download the source and include it anywhere
+your Unity Assets folder.
+
+This library has a dependency on [Tasks](https://github.com/HouraiTeahouse/Tasks).
+Be sure to add it alongside this library.
+
+TODO: Create a \*.unitypackage.
+
 ## The ILoadable Interface
 The library centers around an the `ILoadable` and `ILoadable<T>` interfaces,
 which represents or wraps a loadable resource and manages its state in memory.
