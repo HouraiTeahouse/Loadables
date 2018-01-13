@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace HouraiTeahouse.Loadables {
 
-internal static class AsyncOperationExtensions {
+public static class AsyncOperationExtensions {
 
   public static ITask<T> ToTask<T>(this T operation) where T : AsyncOperation {
     var task = new Task<T>();

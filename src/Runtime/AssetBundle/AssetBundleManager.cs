@@ -118,20 +118,30 @@ public static class AssetBundleManager {
     return Manifest;
   }
 
+  public static bool IsValidLocalBundle(string path) {
+    return File.Exists(BundleUtility.GetLocalBundlePath(path));
+  }
+
+  public static ITask<string[]> GetValidBundlePaths(string glob) {
+    var regex = new Regex(glob.Replace("*" , "(.*?)"));
+    return Initialize().Then(map => {
+      return map.BundleNames.Where(name => regex.IsMatch(name)).ToArray();
+    });
+  }
+
   // Load AssetBundle and its dependencies.
-  public static ITask<AssetBundle> LoadAssetBundleAsync(string assetBundleName) {
+  public static ITask<LoadedAssetBundle> LoadAssetBundleAsync(string assetBundleName) {
     Debug.Log("Loading Asset Bundle: " + assetBundleName);
 
 #if UNITY_EDITOR
     // If we're in Editor simulation mode, we don't have to really load the assetBundle and its dependencies.
     if (SimulateBundles) {
-      return Task.FromResult<AssetBundle>(null);
+      return Task.FromResult<LoadedAssetBundle>(null);
     }
 #endif
 
     return LoadDependencies(assetBundleName)
-      .Then(deps => LoadAssetBundleInternal(assetBundleName))
-      .Then(loadedBundle => loadedBundle.AssetBundle);
+      .Then(deps => LoadAssetBundleInternal(assetBundleName));
   }
 
   // Remaps the asset bundle name to the best fitting asset bundle variant.
@@ -190,7 +200,7 @@ public static class AssetBundleManager {
     string path = null;
     var task = Manifest.Then(manifest => {
       if (manifest == null) return null;
-      path = manifest[name].Paths.FirstOrDefault(p => File.Exists(BundleUtility.GetLocalBundlePath(p)));
+      path = manifest[name].Paths.FirstOrDefault(IsValidLocalBundle);
       if (path != null) return LoadAssetBundleRaw(path);
       var message = $"No valid path for asset bundle {name} could be found.";
       throw new FileNotFoundException(message);

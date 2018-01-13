@@ -42,7 +42,7 @@ public class AssetBundleAsset<T> : AbstractAsset<T> where T : UnityEngine.Object
     }
 #endif
     return AssetBundleManager.LoadAssetBundleAsync(BundleName)
-      .Then(bundle => bundle.LoadAssetAsync<T>(AssetName).ToTask())
+      .Then(bundle => bundle.AssetBundle.LoadAssetAsync<T>(AssetName).ToTask())
       .Then(request => {
         Debug.Log($"Loaded {AssetName} from {BundleName}");
         return request.asset as T;
