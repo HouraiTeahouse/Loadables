@@ -7,12 +7,12 @@ public class AssetBundlesMenuItems {
 
   [MenuItem(SimulationMode)]
   public static void ToggleSimulationMode () {
-    AssetBundleManager.SimulateAssetBundleInEditor = !AssetBundleManager.SimulateAssetBundleInEditor;
+    AssetBundleManager.SimulateBundles = !AssetBundleManager.SimulateBundles;
   }
 
   [MenuItem(SimulationMode, true)]
   public static bool ToggleSimulationModeValidate () {
-    UnityEditor.Menu.SetChecked(SimulationMode, AssetBundleManager.SimulateAssetBundleInEditor);
+    UnityEditor.Menu.SetChecked(SimulationMode, AssetBundleManager.SimulateBundles);
     return true;
   }
 

@@ -12,6 +12,13 @@ namespace HouraiTeahouse.Loadables.AssetBundles {
         public ReadOnlyCollection<string> Paths { get; private set; }
         public ReadOnlyCollection<BundleMetadata> Dependencies { get; private set; }
 
+        internal BundleMetadata(string baseName) {
+          Name = baseName;
+          Hash = new Hash128();
+          Dependencies = new ReadOnlyCollection<BundleMetadata>(new BundleMetadata[0]);
+          Paths = new ReadOnlyCollection<string>(new string[0]);
+        }
+
         internal BundleMetadata(string baseName,
                                 Hash128 hash,
                                 IEnumerable<BundleMetadata> dependencies,

@@ -25,15 +25,28 @@ public class AssetBundleAsset<T> : AbstractAsset<T> where T : UnityEngine.Object
 #if UNITY_EDITOR
     if (!EditorApplication.isPlayingOrWillChangePlaymode) {
       return EditorAssetUtil.LoadBundledAsset<T>(BundleName, AssetName);
-    } else
-#endif
-    {
-      throw new InvalidOperationException($"Cannot synchronously load assets from AssetBundles. Path: {Path}");
     }
+#endif
+    throw new InvalidOperationException($"Cannot synchronously load assets from AssetBundles. Path: {Path}");
   }
 
   public override ITask<T> LoadAsyncImpl() {
-    return AssetBundleManager.LoadAssetAsync<T>(BundleName, AssetName);
+    Debug.Log($"Loading {AssetName} from {BundleName} bundle...");
+#if UNITY_EDITOR
+    if (AssetBundleManager.SimulateBundles || !EditorApplication.isPlayingOrWillChangePlaymode) {
+      string[] assetPaths = AssetDatabase.GetAssetPathsFromAssetBundleAndAssetName(BundleName, AssetName);
+      if (assetPaths.Length != 0) {
+        return Task.FromResult(AssetDatabase.LoadAssetAtPath<T>(assetPaths[0]));
+      }
+      return Task.FromError<T>(new Exception($"There is no asset with name {AssetName} in {BundleName}"));
+    }
+#endif
+    return AssetBundleManager.LoadAssetBundleAsync(BundleName)
+      .Then(bundle => bundle.LoadAssetAsync<T>(AssetName).ToTask())
+      .Then(request => {
+        Debug.Log($"Loaded {AssetName} from {BundleName}");
+        return request.asset as T;
+      });
   }
 
   public override void UnloadImpl() {
