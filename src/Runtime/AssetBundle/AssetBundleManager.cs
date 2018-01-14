@@ -239,7 +239,7 @@ public static class AssetBundleManager {
     UnloadDependencies(assetBundleName);
   }
 
-  static async Task UnloadDependencies(string assetBundleName) {
+  static async void UnloadDependencies(string assetBundleName) {
     var map = await Initialize();
     BundleMetadata bundle;
     if (!map.TryGetValue(assetBundleName, out bundle)) {

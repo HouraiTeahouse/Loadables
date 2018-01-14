@@ -35,7 +35,7 @@ public class AssetBundleScene : AbstractScene {
       await SceneManager.LoadSceneAsync(levelPaths[0], mode).ToTask();
     }
 #endif
-    var bundle = await AssetBundleManager.LoadAssetBundleAsync(BundleName);
+    await AssetBundleManager.LoadAssetBundleAsync(BundleName);
     await SceneManager.LoadSceneAsync(SceneName, mode).ToTask();
   }
 

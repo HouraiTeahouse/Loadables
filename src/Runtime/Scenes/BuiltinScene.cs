@@ -5,7 +5,7 @@ namespace HouraiTeahouse.Loadables {
 
 public class BuiltinScene : AbstractScene {
 
-  public bool IsLoaded { get; private set; }
+  public override bool IsLoaded { get; protected set; }
 
   public string Path { get; }
 
