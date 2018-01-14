@@ -1,4 +1,4 @@
-using HouraiTeahouse.Tasks;
+using System.Threading.Tasks;
 using UnityEngine.SceneManagement;
 
 namespace HouraiTeahouse.Loadables {
@@ -17,12 +17,12 @@ public class BuiltinScene : AbstractScene {
     SceneManager.LoadScene(Path, mode);
   }
 
-  public override ITask LoadAsync(LoadSceneMode mode = LoadSceneMode.Single) {
-    return SceneManager.LoadSceneAsync(Path, mode).ToTask();
+  public override async Task LoadAsync(LoadSceneMode mode = LoadSceneMode.Single) {
+    await SceneManager.LoadSceneAsync(Path, mode).ToTask();
   }
 
-  public override ITask UnloadAsync() {
-    return SceneManager.UnloadSceneAsync(Path).ToTask();
+  public override async Task UnloadAsync() {
+    await SceneManager.UnloadSceneAsync(Path).ToTask();
   }
 
 }

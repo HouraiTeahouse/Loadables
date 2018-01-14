@@ -1,4 +1,4 @@
-using HouraiTeahouse.Tasks;
+using System.Threading.Tasks;
 
 namespace HouraiTeahouse.Loadables {
 
@@ -6,7 +6,7 @@ public interface ILoadable {
 
   bool IsLoaded { get; }
   void Load();
-  ITask LoadAsync();
+  Task LoadAsync();
   void Unload();
 
 }
@@ -14,7 +14,7 @@ public interface ILoadable {
 public interface ILoadable<T> : ILoadable {
 
   new T Load();
-  new ITask<T> LoadAsync();
+  new Task<T> LoadAsync();
 
 }
 

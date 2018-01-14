@@ -1,4 +1,4 @@
-using HouraiTeahouse.Tasks;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace HouraiTeahouse.Loadables {
@@ -15,10 +15,9 @@ public class ResourcesAsset<T> : AbstractAsset<T> where T : Object {
     return Resources.Load<T>(Path);
   }
 
-  public override ITask<T> LoadAsyncImpl() {
-    return Resources.LoadAsync(Path).ToTask().Then(request => {
-      return request.asset as T;
-    });
+  public override async Task<T> LoadAsyncImpl() {
+    var request = await Resources.LoadAsync(Path).ToTask();
+    return request.asset as T;
   }
 
   public override void UnloadImpl() {

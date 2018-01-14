@@ -1,9 +1,9 @@
-using HouraiTeahouse.Tasks;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
@@ -22,8 +22,8 @@ public static class AssetBundleManager {
 #endif
 
   static readonly Regex SeperatorRegex = new Regex(@"[\\]", RegexOptions.Compiled);
-  public static readonly Task<BundleManfiestMap> Manifest = new Task<BundleManfiestMap>();
-  static readonly Dictionary<string, ITask<LoadedAssetBundle>> AssetBundles = new Dictionary<string, ITask<LoadedAssetBundle>> ();
+  public static readonly TaskCompletionSource<BundleManfiestMap> Manifest = new TaskCompletionSource<BundleManfiestMap>();
+  static readonly Dictionary<string, TaskCompletionSource<LoadedAssetBundle>> AssetBundles = new Dictionary<string, TaskCompletionSource<LoadedAssetBundle>> ();
   static bool _initalized;
 
   static AssetBundleManager() {
@@ -90,14 +90,11 @@ public static class AssetBundleManager {
     }
   }
 
-  // Load AssetBundleManifest.
-  public static ITask<BundleManfiestMap> Initialize() {
+  public static Task<BundleManfiestMap> Initialize() {
     if (_initalized) {
-      return Manifest;
+      return Manifest.Task;
     }
 
-    var bundleName = BundleUtility.GetPlatformName();
-    Debug.Log("Loading Asset Bundle Manifest: " + bundleName);
 #if UNITY_EDITOR
     Debug.Log("Simulation Mode: " + (SimulateBundles ? "Enabled" : "Disabled"));
     // If we're in Editor simulation mode, we don't need the manifest assetBundle.
@@ -106,123 +103,128 @@ public static class AssetBundleManager {
     }
 #endif
 
-    var bundleLoad = LoadAssetBundleRaw(bundleName);
-    bundleLoad.Then(bundle => {
-      var loadedBundle = new LoadedAssetBundle(new BundleMetadata(bundleName), bundle);
-      AssetBundles.Add(bundleName, Task.FromResult(loadedBundle));
-    });
-    bundleLoad.Then(bundle => bundle.LoadAssetAsync<AssetBundleManifest>("AssetBundleManifest").ToTask())
-      .Then(request => Manifest.Resolve(new BundleManfiestMap(request.asset as AssetBundleManifest)));
+    LoadManifest();
 
     _initalized = true;
-    return Manifest;
+    return Manifest.Task;
+  }
+
+  static async void LoadManifest() {
+    var bundleName = BundleUtility.GetPlatformName();
+    Debug.Log("Loading Asset Bundle Manifest: " + bundleName);
+    var bundle = await LoadAssetBundleRaw(bundleName);
+    var loadedBundle = new LoadedAssetBundle(new BundleMetadata(bundleName), bundle);
+    var task = new TaskCompletionSource<LoadedAssetBundle>(loadedBundle);
+    AssetBundles.Add(bundleName, task);
+    var request = await bundle.LoadAssetAsync<AssetBundleManifest>("AssetBundleManifest").ToTask();
+    Manifest.SetResult(new BundleManfiestMap(request.asset as AssetBundleManifest));
   }
 
   public static bool IsValidLocalBundle(string path) {
     return File.Exists(BundleUtility.GetLocalBundlePath(path));
   }
 
-  public static ITask<string[]> GetValidBundlePaths(string glob) {
+  public static async Task<string[]> GetValidBundlePaths(string glob) {
     var regex = new Regex(glob.Replace("*" , "(.*?)"));
-    return Initialize().Then(map => {
-      return map.BundleNames.Where(name => regex.IsMatch(name)).ToArray();
-    });
+    var map = await Initialize();
+    return map.BundleNames.Where(name => regex.IsMatch(name)).ToArray();
   }
 
   // Load AssetBundle and its dependencies.
-  public static ITask<LoadedAssetBundle> LoadAssetBundleAsync(string assetBundleName) {
+  public static async Task<LoadedAssetBundle> LoadAssetBundleAsync(string assetBundleName) {
     Debug.Log("Loading Asset Bundle: " + assetBundleName);
 
 #if UNITY_EDITOR
     // If we're in Editor simulation mode, we don't have to really load the assetBundle and its dependencies.
     if (SimulateBundles) {
-      return Task.FromResult<LoadedAssetBundle>(null);
+      return null;
     }
 #endif
 
-    return LoadDependencies(assetBundleName)
-      .Then(deps => LoadAssetBundleInternal(assetBundleName));
+    await LoadDependencies(assetBundleName);
+    return await LoadAssetBundleInternal(assetBundleName);
   }
 
   // Remaps the asset bundle name to the best fitting asset bundle variant.
-  static ITask<string> RemapVariantName(string assetBundleName) {
-    if (!_initalized)
-        Initialize();
-    return Manifest.Then(map => {
-        var manifest = map.Manifest;
-        string[] bundlesWithVariant = manifest.GetAllAssetBundlesWithVariant();
-        string[] split = assetBundleName.Split('.');
+  static async Task<string> RemapVariantName(string assetBundleName) {
+    var map = await Initialize();
+    var manifest = map.Manifest;
+    string[] bundlesWithVariant = manifest.GetAllAssetBundlesWithVariant();
+    string[] split = assetBundleName.Split('.');
 
-        int bestFit = int.MaxValue;
-        int bestFitIndex = -1;
-        // Loop all the assetBundles with variant to find the best fit variant assetBundle.
-        for (var i = 0; i < bundlesWithVariant.Length; i++) {
-            string[] curSplit = bundlesWithVariant[i].Split('.');
-            if (curSplit[0] != split[0])
-                continue;
+    int bestFit = int.MaxValue;
+    int bestFitIndex = -1;
+    // Loop all the assetBundles with variant to find the best fit variant assetBundle.
+    for (var i = 0; i < bundlesWithVariant.Length; i++) {
+        string[] curSplit = bundlesWithVariant[i].Split('.');
+        if (curSplit[0] != split[0])
+            continue;
 
-            int found = Array.IndexOf(ActiveVariants, curSplit[1]);
+        int found = Array.IndexOf(ActiveVariants, curSplit[1]);
 
-            // If there is no active variant found. We still want to use the first
-            if (found == -1)
-                found = int.MaxValue - 1;
+        // If there is no active variant found. We still want to use the first
+        if (found == -1)
+            found = int.MaxValue - 1;
 
-            if (found < bestFit) {
-                bestFit = found;
-                bestFitIndex = i;
-            }
+        if (found < bestFit) {
+            bestFit = found;
+            bestFitIndex = i;
         }
+    }
 
-        if (bestFit == int.MaxValue - 1)
-            Debug.LogWarning("Ambigious asset bundle variant chosen because there was no matching active variant: "
-                + bundlesWithVariant[bestFitIndex]);
+    if (bestFit == int.MaxValue - 1)
+        Debug.LogWarning("Ambigious asset bundle variant chosen because there was no matching active variant: "
+            + bundlesWithVariant[bestFitIndex]);
 
-        if (bestFitIndex != -1)
-            return bundlesWithVariant[bestFitIndex];
-        return assetBundleName;
-    });
+    if (bestFitIndex != -1)
+        return bundlesWithVariant[bestFitIndex];
+    return assetBundleName;
   }
 
-  static ITask<AssetBundle> LoadAssetBundleRaw(string assetBundleName) {
+  static async Task<AssetBundle> LoadAssetBundleRaw(string assetBundleName) {
     var path = BundleUtility.GetLocalBundlePath(assetBundleName);
-    return AssetBundle.LoadFromFileAsync(path).ToTask().Then(request => request.assetBundle);
+    var request = await AssetBundle.LoadFromFileAsync(path).ToTask();
+    return request.assetBundle;
   }
 
   // Where we actually load the assetbundles from the local disk.
-  static ITask<LoadedAssetBundle> LoadAssetBundleInternal(string assetBundleName) {
+  static async Task<LoadedAssetBundle> LoadAssetBundleInternal(string assetBundleName) {
     // Already loaded.
     var name = SeperatorRegex.Replace(assetBundleName, "/");
-    ITask<LoadedAssetBundle> bundle;
+    TaskCompletionSource<LoadedAssetBundle> bundle;
     if (AssetBundles.TryGetValue(name, out bundle)) {
-      bundle.Then(b => b.ReferencedCount++);
-      return bundle;
+      var loadedBundle = await bundle.Task;
+      loadedBundle.ReferencedCount++;
+      return loadedBundle;
     }
+    bundle = new TaskCompletionSource<LoadedAssetBundle>();
+    AssetBundles.Add(name, bundle);
     string path = null;
-    var task = Manifest.Then(manifest => {
-      if (manifest == null) return null;
-      path = manifest[name].Paths.FirstOrDefault(IsValidLocalBundle);
-      if (path != null) return LoadAssetBundleRaw(path);
+    var map = await Initialize();
+    if (map == null) return null;
+    path = map[name].Paths.FirstOrDefault(IsValidLocalBundle);
+    AssetBundle assetBundle = null;
+    if (path != null) {
+      assetBundle = await LoadAssetBundleRaw(path);
+    } else {
       var message = $"No valid path for asset bundle {name} could be found.";
       throw new FileNotFoundException(message);
-    }).Then(assetBundle => {
-      if (assetBundle == null) {
-        throw new Exception($"{name} is not a valid asset bundle.");
-      }
-      Debug.Log($"Loaded bundle {name} from {path}.");
-      return new LoadedAssetBundle(Manifest.Result[name], assetBundle);
-    });
-    AssetBundles.Add(name, task);
-    return task;
+    }
+    if (assetBundle == null) {
+      throw new Exception($"{name} is not a valid asset bundle.");
+    }
+    Debug.Log($"Loaded bundle {name} from {path}.");
+    var newBundle = new LoadedAssetBundle(map[name], assetBundle);
+    bundle.SetResult(newBundle);
+    return newBundle;
   }
 
   // Where we get all the dependencies and load them all.
-  static ITask<LoadedAssetBundle[]> LoadDependencies(string assetBundleName) {
-      return Initialize().ThenAll(map =>
-          // Get dependecies from the AssetBundleManifest object..
-          map[assetBundleName].Dependencies.Select(dep =>
-                  RemapVariantName(dep.Name).Then(name =>
-                  LoadAssetBundleInternal(name)))
-      );
+  static async Task<LoadedAssetBundle[]> LoadDependencies(string assetBundleName) {
+    var map = await Initialize();
+    var depTasks = map[assetBundleName].Dependencies.Select(dep => RemapVariantName(dep.Name));
+    var dependencies = await Task.WhenAll(depTasks);
+    return await Task.WhenAll(dependencies.Select(dep => LoadAssetBundleInternal(dep)));
   }
 
   // Unload assetbundle and its dependencies.
@@ -237,33 +239,31 @@ public static class AssetBundleManager {
     UnloadDependencies(assetBundleName);
   }
 
-  static ITask UnloadDependencies(string assetBundleName) {
-    return Initialize().Then(map => {
-      BundleMetadata bundle;
-      if (!map.TryGetValue(assetBundleName, out bundle)) {
-        return;
-      }
+  static async Task UnloadDependencies(string assetBundleName) {
+    var map = await Initialize();
+    BundleMetadata bundle;
+    if (!map.TryGetValue(assetBundleName, out bundle)) {
+      return;
+    }
 
-      // Loop dependencies.
-      foreach(var dependency in bundle.Dependencies) {
-        UnloadAssetBundleInternal(dependency.Name);
-      }
-    });
+    // Loop dependencies.
+    foreach(var dependency in bundle.Dependencies) {
+      UnloadAssetBundleInternal(dependency.Name);
+    }
   }
 
-  static void UnloadAssetBundleInternal(string assetBundleName) {
-    ITask<LoadedAssetBundle> task;
+  static async void UnloadAssetBundleInternal(string assetBundleName) {
+    TaskCompletionSource<LoadedAssetBundle> task;
     if (!AssetBundles.TryGetValue(assetBundleName, out task)) {
       return;
     }
-    task.Then(bundle => {
-      if (bundle == null || --bundle.ReferencedCount != 0) {
-        return;
-      }
-      bundle.AssetBundle.Unload(false);
-      AssetBundles.Remove(assetBundleName);
-      Debug.Log($"{assetBundleName} has been unloaded successfully");
-    });
+    var bundle = await task.Task;
+    if (bundle == null || --bundle.ReferencedCount != 0) {
+      return;
+    }
+    bundle.AssetBundle.Unload(false);
+    AssetBundles.Remove(assetBundleName);
+    Debug.Log($"{assetBundleName} has been unloaded successfully");
   }
 
 }

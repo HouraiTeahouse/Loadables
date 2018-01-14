@@ -1,6 +1,6 @@
-using HouraiTeahouse.Tasks;
 using HouraiTeahouse.Loadables.AssetBundles;
 using System;
+using System.Threading.Tasks;
 using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -23,25 +23,25 @@ public class AssetBundleScene : AbstractScene {
     throw new InvalidOperationException("Cannot synchronously load scenes from Asset Bundles");
   }
 
-  public override ITask LoadAsync(LoadSceneMode mode = LoadSceneMode.Single) {
+  public override async Task LoadAsync(LoadSceneMode mode = LoadSceneMode.Single) {
 #if UNITY_EDITOR
     if (AssetBundleManager.SimulateBundles) {
       string[] levelPaths = AssetDatabase.GetAssetPathsFromAssetBundleAndAssetName(BundleName, SceneName);
       if (levelPaths.Length == 0) {
         //TODO: The error needs to differentiate that an asset bundle name doesn't exist from that there 
         // right scene does not exist in the asset bundle...
-        return Task.FromError(new Exception($"There is no scene with name {SceneName} in {BundleName}"));
+        throw new Exception($"There is no scene with name {SceneName} in {BundleName}");
       }
-      return SceneManager.LoadSceneAsync(levelPaths[0], mode).ToTask();
+      await SceneManager.LoadSceneAsync(levelPaths[0], mode).ToTask();
     }
 #endif
-    return AssetBundleManager.LoadAssetBundleAsync(BundleName)
-      .Then(bundle => SceneManager.LoadSceneAsync(SceneName, mode).ToTask());
+    var bundle = await AssetBundleManager.LoadAssetBundleAsync(BundleName);
+    await SceneManager.LoadSceneAsync(SceneName, mode).ToTask();
   }
 
-  public override ITask UnloadAsync() {
+  public override async Task UnloadAsync() {
     AssetBundleManager.UnloadAssetBundle(BundleName);
-    return SceneManager.UnloadSceneAsync(SceneName).ToTask();
+    await SceneManager.UnloadSceneAsync(SceneName).ToTask();
   }
 
 }

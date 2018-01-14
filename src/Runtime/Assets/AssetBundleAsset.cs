@@ -1,6 +1,6 @@
-using HouraiTeahouse.Tasks;
 using HouraiTeahouse.Loadables.AssetBundles;
 using System;
+using System.Threading.Tasks;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -30,23 +30,21 @@ public class AssetBundleAsset<T> : AbstractAsset<T> where T : UnityEngine.Object
     throw new InvalidOperationException($"Cannot synchronously load assets from AssetBundles. Path: {Path}");
   }
 
-  public override ITask<T> LoadAsyncImpl() {
+  public override async Task<T> LoadAsyncImpl() {
     Debug.Log($"Loading {AssetName} from {BundleName} bundle...");
 #if UNITY_EDITOR
     if (AssetBundleManager.SimulateBundles || !EditorApplication.isPlayingOrWillChangePlaymode) {
       string[] assetPaths = AssetDatabase.GetAssetPathsFromAssetBundleAndAssetName(BundleName, AssetName);
       if (assetPaths.Length != 0) {
-        return Task.FromResult(AssetDatabase.LoadAssetAtPath<T>(assetPaths[0]));
+        return AssetDatabase.LoadAssetAtPath<T>(assetPaths[0]);
       }
-      return Task.FromError<T>(new Exception($"There is no asset with name {AssetName} in {BundleName}"));
+      throw new Exception($"There is no asset with name {AssetName} in {BundleName}");
     }
 #endif
-    return AssetBundleManager.LoadAssetBundleAsync(BundleName)
-      .Then(bundle => bundle.AssetBundle.LoadAssetAsync<T>(AssetName).ToTask())
-      .Then(request => {
-        Debug.Log($"Loaded {AssetName} from {BundleName}");
-        return request.asset as T;
-      });
+    var bundle = await AssetBundleManager.LoadAssetBundleAsync(BundleName);
+    var request = await bundle.AssetBundle.LoadAssetAsync<T>(AssetName).ToTask();
+    Debug.Log($"Loaded {AssetName} from {BundleName}");
+    return request.asset as T;
   }
 
   public override void UnloadImpl() {
