@@ -5,7 +5,7 @@ namespace HouraiTeahouse.Loadables {
 
 public class BuiltinScene : AbstractScene {
 
-  public override bool IsLoaded { get; protected set; }
+  public override bool IsLoaded => IsSceneLoaded(Path);
 
   public string Path { get; }
 
@@ -13,11 +13,11 @@ public class BuiltinScene : AbstractScene {
     Path = path;
   }
 
-  public override void Load(LoadSceneMode mode = LoadSceneMode.Single) {
+  protected override void LoadImpl(LoadSceneMode mode = LoadSceneMode.Single) {
     SceneManager.LoadScene(Path, mode);
   }
 
-  public override async Task LoadAsync(LoadSceneMode mode = LoadSceneMode.Single) {
+  protected override async Task LoadAsyncImpl(LoadSceneMode mode = LoadSceneMode.Single) {
     await SceneManager.LoadSceneAsync(Path, mode).ToTask();
   }
 

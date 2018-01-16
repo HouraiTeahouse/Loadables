@@ -1,6 +1,7 @@
 using HouraiTeahouse.Loadables.AssetBundles;
 using System;
 using System.Threading.Tasks;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -9,6 +10,8 @@ using UnityEditor;
 namespace HouraiTeahouse.Loadables {
 
 public class AssetBundleScene : AbstractScene {
+
+  public override bool IsLoaded => IsSceneLoaded(SceneName);
 
   public string BundleName { get; }
   public string SceneName { get; }
@@ -19,11 +22,11 @@ public class AssetBundleScene : AbstractScene {
     SceneName = bundlePath.Item2;
   }
 
-  public override void Load(LoadSceneMode mode = LoadSceneMode.Single) {
+  protected override void LoadImpl(LoadSceneMode mode = LoadSceneMode.Single) {
     throw new InvalidOperationException("Cannot synchronously load scenes from Asset Bundles");
   }
 
-  public override async Task LoadAsync(LoadSceneMode mode = LoadSceneMode.Single) {
+  protected override async Task LoadAsyncImpl(LoadSceneMode mode = LoadSceneMode.Single) {
 #if UNITY_EDITOR
     if (AssetBundleManager.SimulateBundles) {
       string[] levelPaths = AssetDatabase.GetAssetPathsFromAssetBundleAndAssetName(BundleName, SceneName);
