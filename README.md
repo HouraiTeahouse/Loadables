@@ -8,8 +8,8 @@ We generally advise using git submodules to include this into any git based proj
 If that is not possible, either clone or download the source and include it anywhere
 your Unity Assets folder.
 
-This library has a dependency on [Tasks](https://github.com/HouraiTeahouse/Tasks).
-Be sure to add it alongside this library.
+This library uses `System.Threading.Tasks` and must be used with the .NET 4.6
+Equivlalent Runtime.
 
 TODO: Create a \*.unitypackage.
 
@@ -20,7 +20,7 @@ These interfaces offer these main functions:
 
  * `IsLoaded` - is the resource wrapped by this Loadable currently loaded in
    memory?
- * `Load()` - Loadss a currently unloaded resource into memory. This is a
+ * `Load()` - Loads a currently unloaded resource into memory. This is a
    synchronous operation and will block the executing thread until it is
    complete. Should be a no-op if the resource is already loaded.
  * `LoadAsync()` - Same as Load(), but executes it asynchronously, returns a
@@ -56,12 +56,7 @@ IAsset<Sprite> spriteResource = Asset.Get<Sprite>("Resource/Path/To/Sprite");
 Sprite loadedSprite = spriteResource.Load();
 
 // Load asset asynchronously.
-ITask<Sprite> loadTask = spriteResource.LoadAsync();
-
-// Add callback for handling the asset after loading.
-loadTask.Then(sprite => {
-  loadedSprite = sprite;
-});
+var sprite = await spriteResource.LoadAsync();
 ```
 
 A few things to keep in mind when working with asset loadables:
@@ -103,12 +98,7 @@ scene.Load();
 scene.Load(LoadSceneMode.Additive);
 
 // Load scene asynchronously.
-ITask loadTask = scene.LoadAsync();
-
-// Add callback for doing operations after loading the scene.
-loadTask.Then(() => {
-  Debug.Log("Scene Loaded!");
-});
+await scene.LoadAsync();
 ```
 
 A few things to keep in mind when working with asset loadables:
