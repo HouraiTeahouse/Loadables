@@ -29,13 +29,8 @@ public class AssetBundleScene : AbstractScene {
   protected override async Task LoadAsyncImpl(LoadSceneMode mode = LoadSceneMode.Single) {
 #if UNITY_EDITOR
     if (AssetBundleManager.SimulateBundles) {
-      string[] levelPaths = AssetDatabase.GetAssetPathsFromAssetBundleAndAssetName(BundleName, SceneName);
-      if (levelPaths.Length == 0) {
-        //TODO: The error needs to differentiate that an asset bundle name doesn't exist from that there 
-        // right scene does not exist in the asset bundle...
-        throw new Exception($"There is no scene with name {SceneName} in {BundleName}");
-      }
-      await SceneManager.LoadSceneAsync(levelPaths[0], mode).ToTask();
+      // TODO(james7132): Figure out a way to do this without needing the scene in the build settings
+      await SceneManager.LoadSceneAsync(SceneName, mode).ToTask();
     }
 #endif
     await AssetBundleManager.LoadAssetBundleAsync(BundleName);
