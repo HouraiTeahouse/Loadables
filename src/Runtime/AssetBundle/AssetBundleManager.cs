@@ -182,9 +182,15 @@ public static class AssetBundleManager {
   }
 
   static async Task<AssetBundle> LoadAssetBundleRaw(string assetBundleName) {
+    const int kTimeout = 20000;
     var path = BundleUtility.GetLocalBundlePath(assetBundleName);
-    var request = await AssetBundle.LoadFromFileAsync(path).ToTask();
-    return request.assetBundle;
+    var loadTask = AssetBundle.LoadFromFileAsync(path).ToTask();
+    if (await Task.WhenAny(loadTask, Task.Delay(kTimeout)) == loadTask) {
+      return loadTask.Result.assetBundle;
+    } else {
+      Debug.LogError($"Asset Bundle Load timed out. Bundle Name: {assetBundleName}. Timeout: {kTimeout}");
+      throw new Exception($"Asset Bundle Load timed out. Bundle Name: {assetBundleName}. Timeout: {kTimeout}");
+    }
   }
 
   // Where we actually load the assetbundles from the local disk.
@@ -211,6 +217,7 @@ public static class AssetBundleManager {
       throw new FileNotFoundException(message);
     }
     if (assetBundle == null) {
+      Debug.LogError($"{name} is not a valid asset bundle.");
       throw new Exception($"{name} is not a valid asset bundle.");
     }
     Debug.Log($"Loaded bundle {name} from {path}.");

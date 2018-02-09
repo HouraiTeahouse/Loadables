@@ -41,10 +41,15 @@ public class AssetBundleAsset<T> : AbstractAsset<T> where T : UnityEngine.Object
       throw new Exception($"There is no asset with name {AssetName} in {BundleName}");
     }
 #endif
-    var bundle = await AssetBundleManager.LoadAssetBundleAsync(BundleName);
-    var request = await bundle.AssetBundle.LoadAssetAsync<T>(AssetName).ToTask();
-    Debug.Log($"Loaded {AssetName} from {BundleName}");
-    return request.asset as T;
+    try {
+      var bundle = await AssetBundleManager.LoadAssetBundleAsync(BundleName);
+      var request = await bundle.AssetBundle.LoadAssetAsync<T>(AssetName).ToTask();
+      Debug.Log($"Loaded {AssetName} from {BundleName}");
+      return request.asset as T;
+    } catch (Exception e) {
+      Debug.LogException(e);
+      throw e;
+    }
   }
 
   public override void UnloadImpl() {

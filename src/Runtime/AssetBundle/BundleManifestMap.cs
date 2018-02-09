@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,7 +9,15 @@ public class BundleManfiestMap {
   readonly Dictionary<string, BundleMetadata> _validIdentifiers;
   public AssetBundleManifest Manifest { get; }
 
-  public BundleMetadata this[string name] => _validIdentifiers[name];
+  public BundleMetadata this[string name] {
+    get { 
+      BundleMetadata metadata;
+      if (_validIdentifiers.TryGetValue(name, out metadata)) {
+        return metadata;
+      }
+      throw new KeyNotFoundException($"Bundle Metadata for bundle {name} cannot be found");
+    }
+  } 
   public IEnumerable<string> BundleNames => _validIdentifiers.Keys;
 
   public BundleManfiestMap(AssetBundleManifest manifest) {
