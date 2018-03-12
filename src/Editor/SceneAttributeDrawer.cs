@@ -28,12 +28,7 @@ internal class SceneAttributeDrawer : PropertyDrawer {
 
     public Data(SerializedProperty property, GUIContent content) {
       _path = property.stringValue;
-      string path = $"Assets/{_path}.unity";
-      if (Bundles.IsBundlePath(_path)) {
-        var bundlePath = Bundles.SplitBundlePath(_path);
-        var paths = AssetDatabase.GetAssetPathsFromAssetBundleAndAssetName(bundlePath.Item1, bundlePath.Item2);
-        path = paths.FirstOrDefault() ?? path;
-      }
+      string path = Bundles.IsBundlePath(_path) ? Bundles.SplitBundlePath(_path).Item2 : _path;
       _object = AssetDatabase.LoadAssetAtPath<SceneAsset>(path);
       Content = new GUIContent(content);
       UpdateContent(content);
@@ -50,9 +45,7 @@ internal class SceneAttributeDrawer : PropertyDrawer {
       obj = EditorGUI.ObjectField(position, Content, _object, typeof(SceneAsset), false) as SceneAsset;
       GUI.color = oldColor;
 
-      if (!EditorGUI.EndChangeCheck()) {
-        return;
-      }
+      if (!EditorGUI.EndChangeCheck()) return;
       Update(obj);
       property.stringValue = _path;
       EditorUtility.SetDirty(property.serializedObject.targetObject);
@@ -76,16 +69,12 @@ internal class SceneAttributeDrawer : PropertyDrawer {
 
     void Update(SceneAsset obj) {
       _object = obj;
-      var scenePath = GetScenePath(obj);
-      var bundleName = GetBundlePath(obj);
-      _path = scenePath ?? bundleName ?? string.Empty;
+      _path = GetScenePath(obj) ?? GetBundlePath(obj) ?? string.Empty;
     }
 
     string GetScenePath(SceneAsset scene) {
       var assetPath = AssetDatabase.GetAssetPath(scene);
-      var scenePath = Regex.Replace(assetPath, "Assets/(.*)\\..*", "$1");
-      return EditorBuildSettings.scenes.Select(s => s.path)
-                                       .FirstOrDefault(p => p == scenePath);
+      return EditorBuildSettings.scenes.Select(s => s.path).FirstOrDefault(p => p == assetPath);
     }
 
     string GetBundlePath(Object obj) {
