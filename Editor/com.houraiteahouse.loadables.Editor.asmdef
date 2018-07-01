@@ -1,0 +1,11 @@
+{
+    "name": "com.houraiteahouse.loadables.Editor",
+    "references": [
+      "com.houraiteahouse.core.Runtime",
+      "com.houraiteahouse.loadables.Runtime"
+    ],
+    "includePlatforms": [
+      "Editor"
+    ],
+    "excludePlatforms": []
+}

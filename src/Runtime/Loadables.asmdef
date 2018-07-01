@@ -1,8 +1,0 @@
-{
-    "name": "Loadables",
-    "references": [
-        "HouraiCore"
-    ],
-    "includePlatforms": [],
-    "excludePlatforms": []
-}
