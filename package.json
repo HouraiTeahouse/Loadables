@@ -1,0 +1,7 @@
+{
+  "author": "Hourai Teahouse",
+  "name": "com.houraiteahouse.loadables",
+  "displayName": "Loadables",
+  "version": "0.0.1",
+  "description": "Abstraction layer for dynamically loadable constructs"
+}
